@@ -110,11 +110,183 @@ paths:
           description: Invalid Fields
         '500':
           description: Internal Server Error
+
+# Pahse2
+  /user/accounts:
+    post:
+      security:
+        - Bearer: []
+      tags:
+        - Account Module (not implemented)
+      summary: User Accounts API
+      description: |
+          API for fetching a user accounts
+          Filter all accounts where <code>`the user id`</code> is present in the <code>`userId`</code> table.
+      parameters:
+        - in: header
+          name: Authorization
+          description: Attach Bearer JWT token
+          required: true
+        - in: body
+          name: body
+          description: Filter accounts based on userId
+          required: true
+          schema:
+            type: object
+            properties:
+              userId:
+                type: string
+                description: The userId to filter accounts by
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: User accounts retrieved successully
+          schema:
+            $ref: '#/definitions/UserAccountsResponse'
+          examples:
+            application/json:
+              status: 200
+              message: "Success"
+              body:
+                userId: "67c7352eb891884d709ab384"
+                account:
+                  - id: "objectId0001"
+                    accountNumber: "x8349"
+                    title: "Argent Bank Checking"
+                    amount: 2082.79
+                    description: "Available Balance"
+                  - id: "objectId0002"
+                    accountNumber: "x6712"
+                    title: "Argent Bank Savings"
+                    amount: 10928.42
+                    description: "Available Balance"
+                  - id: "objectId0003"
+                    accountNumber: "x8349"
+                    title: "Argent Bank Credit Card"
+                    amount: 184.30
+                    description: "Current Balance"
+        '400':
+          description: Invalid Fields
+        '404':
+          description: Accounts not found
+        '500':
+          description: Internal Server Error
+  /account/transactions/lastTransaction+31days:
+    post:
+      security:
+        - Bearer: []
+      tags:
+        - Account Module (not implemented)
+      summary: Last 31 Days Transactions from Last Transaction API
+      description: |
+        API for fetching account transactions for the 31 days following the most recent transaction.
+
+        <b>The server should retrieve the last transaction</b> and then filter out transactions that are within <b>31 days of that last transaction</b>. 
+        <i>This allows the client to retrieve a relevant set of data based on the most recent activity.</i>
+      parameters:
+        - in: header
+          name: Authorization
+          description: Attach Bearer JWT token
+          required: true
+        - in: body
+          name: body
+          description: Account ID to fetch transactions
+          required: true
+          schema:
+            type: object
+            properties:
+              accountId:
+                type: string
+                description: The account ID to fetch transactions for
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Account transactions for the 31 days following the most recent transaction retrieved successfully
+          schema:
+            $ref: '#/definitions/AccountTransactionsResponse'
+          examples:
+            application/json:
+              status: 200
+              message: "Success"
+              body:
+                accountId: "objectId0001"
+                transactions:
+                - id: "objectId0020"
+                  date: "2020-06-20T14:30:00Z"
+                  description: "Golden Sun Bakery"
+                  amount: 5
+                  balance: 2082.79
+                  transactionType: "Electronic"
+                  category: "Food"
+                  notes: ""
+                  userIdOfNote: "67c7352eb891884d709ab384"
+
+                - id: "objectId0021"
+                  date: "2020-06-20T14:00:00Z"
+                  description: "Golden Sun Bakery"
+                  amount: 10
+                  balance: 2087.79
+                  transactionType: "Electronic"
+                  category: "Food"
+                  notes: ""
+                  userIdOfNote: "67c7352eb891884d709ab384"
+
+                - id: "objectId0022"
+                  date: "2020-06-20T13:30:00Z"
+                  description: "Golden Sun Bakery"
+                  amount: 20
+                  balance: 2097.79
+                  transactionType: "Electronic"
+                  category: "Food"
+                  notes: ""
+                  userIdOfNote: "67c7352eb891884d709ab384"
+
+                - id: "objectId0023"
+                  date: "2020-06-20T13:00:00Z"
+                  description: "Golden Sun Bakery"
+                  amount: 30
+                  balance: 2117.79
+                  transactionType: "Electronic"
+                  category: "Food"
+                  notes: ""
+                  userIdOfNote: "67c7352eb891884d709ab384"
+
+                - id: "objectId0024"
+                  date: "2020-06-20T12:30:00Z"
+                  description: "Golden Sun Bakery"
+                  amount: 40
+                  balance: 2147.79
+                  transactionType: "Electronic"
+                  category: "Food"
+                  notes: ""
+                  userIdOfNote: "67c7352eb891884d709ab384"
+
+                - id: "objectId0025"
+                  date: "2020-06-20T12:00:00Z"
+                  description: "Golden Sun Bakery"
+                  amount: 50
+                  balance: 2187.79
+                  transactionType: "Electronic"
+                  category: "Food"
+                  notes: ""
+                  userIdOfNote: "67c7352eb891884d709ab384"
+        '400':
+          description: Invalid Fields
+        '404':
+          description: Account not found
+        '500':
+          description: Internal Server Error
+
+
 securityDefinitions:
   Bearer:
     type: apiKey
     name: Authorization
     in: header
+
+
 definitions:
   User:
     properties:
@@ -164,3 +336,81 @@ definitions:
         type: string
       lastName:
         type: string
+
+
+  # Phase2
+  Account:
+    type: object
+    properties:
+      id: 
+        type: string
+      accountNumber:
+        type: string
+      title: 
+        type: string
+      amount: 
+        type: number
+        format: float
+      description: 
+        type: string
+      usersId:
+        type: array
+        items:
+          type: string
+  UserAccountsResponse:
+    type: object
+    properties:
+      status:
+        type: integer
+      message:
+        type: string
+      body:
+        type: object
+        properties:
+          userId:
+            type: string
+          accounts:
+            $ref: "#/definitions/Account"
+  Transaction:
+    type: object
+    properties:
+      id: 
+        type: string
+      date:
+        type: date-time
+      description: 
+        type: string
+      amount: 
+        type: number
+        format: float
+      balance: 
+        type: number
+        format: float
+      transactionType:
+        type: string
+      category:
+        type: string
+      notes:
+        type: string
+      accountId:
+        type: string
+      userIdOfNote:
+        type: string
+  AccountTransactions:
+      type: object
+      properties:
+        accountId:
+          type: string
+        transactions:
+          type: array
+          items:
+            $ref: "#/definitions/Transaction"
+  AccountTransactionsResponse:
+    type: object
+    properties:
+      status:
+        type: integer
+      message:
+        type: string
+      body:
+         $ref: "#/definitions/AccountTransactions"
