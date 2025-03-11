@@ -121,6 +121,7 @@ paths:
       summary: User Accounts API
       description: |
           API for fetching a user accounts
+
           Filter all accounts where <code>`the user id`</code> is present in the <code>`userId`</code> table.
       parameters:
         - in: header
@@ -147,7 +148,7 @@ paths:
           examples:
             application/json:
               status: 200
-              message: "Success"
+              message: "Success fetching user accounts"
               body:
                 userId: "67c7352eb891884d709ab384"
                 account:
@@ -172,17 +173,71 @@ paths:
           description: Accounts not found
         '500':
           description: Internal Server Error
-  /account/transactions/lastTransaction+31days:
+  /user/account:
     post:
       security:
         - Bearer: []
       tags:
         - Account Module (not implemented)
-      summary: Last 31 Days Transactions from Last Transaction API
+      summary: User Account API
+      description: |
+          API for fetching a user account
+
+          Check where <code>`the user id`</code> is present in the <code>`userId`</code> table.
+      parameters:
+        - in: header
+          name: Authorization
+          description: Attach Bearer JWT token
+          required: true
+        - in: body
+          name: body
+          description: Account based on userId
+          required: true
+          schema:
+            type: object
+            properties:
+              userId:
+                type: string
+                description: The user ID to control account ownership
+              accountId:
+                type: string
+                description: The account ID to fetch account
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: User account retrieved successully
+          schema:
+            $ref: '#/definitions/UserAccountResponse'
+          examples:
+            application/json:
+              status: 200
+              message: "Success fetching user account"
+              body:
+                userId: "67c7352eb891884d709ab384"
+                account:
+                    id: "objectId0001"
+                    accountNumber: "x8349"
+                    title: "Argent Bank Checking"
+                    amount: 2082.79
+                    description: "Available Balance"
+        '400':
+          description: Invalid Fields
+        '404':
+          description: Accounts not found
+        '500':
+          description: Internal Server Error
+  /user/account/transactions/31daysSinceMostRecentTransaction:
+    post:
+      security:
+        - Bearer: []
+      tags:
+        - Account Module (not implemented)
+      summary: Last 31 Days Transactions from most recent Transaction API
       description: |
         API for fetching account transactions for the 31 days following the most recent transaction.
 
-        <b>The server should retrieve the last transaction</b> and then filter out transactions that are within <b>31 days of that last transaction</b>. 
+        <b>The server should retrieve the most recent transaction</b> and then filter out transactions that are within <b>31 days of that last transaction</b>. 
         <i>This allows the client to retrieve a relevant set of data based on the most recent activity.</i>
       parameters:
         - in: header
@@ -196,6 +251,9 @@ paths:
           schema:
             type: object
             properties:
+              userId:
+                type: string
+                description: The user ID to control account ownership
               accountId:
                 type: string
                 description: The account ID to fetch transactions for
@@ -205,12 +263,13 @@ paths:
         '200':
           description: Account transactions for the 31 days following the most recent transaction retrieved successfully
           schema:
-            $ref: '#/definitions/AccountTransactionsResponse'
+            $ref: '#/definitions/UserAccountTransactionsResponse'
           examples:
             application/json:
               status: 200
-              message: "Success"
+              message: "Success fetching account transactions for the 31 days following the most recent transaction"
               body:
+                userId: "67c7352eb891884d709ab384"
                 accountId: "objectId0001"
                 transactions:
                 - id: "objectId0020"
@@ -276,6 +335,69 @@ paths:
           description: Invalid Fields
         '404':
           description: Account not found
+        '500':
+          description: Internal Server Error
+  /transaction:
+    patch:
+      security:
+        - Bearer: []
+      tags:
+        - Account Module (not implemented)
+      summary: Notes Account Transaction API
+      description: |
+        API for updating notes account transaction.
+
+        Find transaction by id when update category, notes and userIdOfNote (userId that updated transaction)
+      parameters:
+        - in: header
+          name: Authorization
+          description: Attach Bearer JWT token
+          required: true
+        - in: body
+          name: body
+          description: Transaction ID to update transaction note
+          required: true
+          schema:
+            type: object
+            properties:
+              transactiontId:
+                type: string
+                description: The transaction ID to update transaction
+              category:
+                type: string
+                description: new text to update transaction
+              notes:
+                type: string
+                description: new text to update transaction
+              userIdOfNote:
+                type: string
+                description: userId that updated transaction (id of connected user)
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Notes Transaction updated successfully
+          schema:
+            $ref: '#/definitions/TransactionResponse'
+          examples:
+            application/json:
+              status: 200
+              message: "Success updating notes transaction"
+              body:
+                transaction:
+                  id: "objectId0020"
+                  date: "2020-06-20T14:30:00Z"
+                  description: "Golden Sun Bakery"
+                  amount: 5
+                  balance: 2082.79
+                  transactionType: "Electronic"
+                  category: "new text"
+                  notes: "new text"
+                  userIdOfNote: "67c7352eb891884d709ab384"
+        '400':
+          description: Invalid Fields
+        '404':
+          description: Transaction not found
         '500':
           description: Internal Server Error
 
@@ -357,20 +479,15 @@ definitions:
         type: array
         items:
           type: string
-  UserAccountsResponse:
-    type: object
-    properties:
-      status:
-        type: integer
-      message:
-        type: string
-      body:
-        type: object
-        properties:
-          userId:
-            type: string
-          accounts:
-            $ref: "#/definitions/Account"
+  # UserAccounts:
+  #     type: object
+  #     properties:
+  #       userId:
+  #         type: string
+  #       accounts:
+  #         type: array
+  #         items:
+  #           $ref: "#/definitions/Account"
   Transaction:
     type: object
     properties:
@@ -396,16 +513,18 @@ definitions:
         type: string
       userIdOfNote:
         type: string
-  AccountTransactions:
-      type: object
-      properties:
-        accountId:
-          type: string
-        transactions:
-          type: array
-          items:
-            $ref: "#/definitions/Transaction"
-  AccountTransactionsResponse:
+  # UserAccountTransactions:
+  #     type: object
+  #     properties:
+  #       userId:
+  #         type: string
+  #       accountId:
+  #         type: string
+  #       transactions:
+  #         type: array
+  #         items:
+  #           $ref: "#/definitions/Transaction"
+  UserAccountsResponse:
     type: object
     properties:
       status:
@@ -413,4 +532,52 @@ definitions:
       message:
         type: string
       body:
-         $ref: "#/definitions/AccountTransactions"
+        type: object
+        properties:
+          userId:
+            type: string
+          accounts:
+            type: array
+            items:
+              $ref: "#/definitions/Account"
+  UserAccountResponse:
+    type: object
+    properties:
+      status:
+        type: integer
+      message:
+        type: string
+      body:
+        type: object
+        properties:
+          userId:
+            type: string
+          account:
+            $ref: "#/definitions/Account"
+  TransactionResponse:
+    type: object
+    properties:
+      status:
+        type: integer
+      message:
+        type: string
+      body:
+         $ref: "#/definitions/Transaction"
+  UserAccountTransactionsResponse:
+    type: object
+    properties:
+      status:
+        type: integer
+      message:
+        type: string
+      body:
+        type: object
+        properties:
+          userId:
+            type: string
+          accountId:
+            type: string
+          transactions:
+            type: array
+            items:
+              $ref: "#/definitions/Transaction"
