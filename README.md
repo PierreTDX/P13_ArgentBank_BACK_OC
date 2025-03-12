@@ -80,7 +80,10 @@ And for the API model that you will be proposing for transactitons, the wirefram
 # Phase 2 : Transactions
 
 We are still in the design phase.  
-Since you are already managing the web application for Phase 1, we would like to hear your thoughts on how you think the APIs should be modeled on the back end. We need you to provide us with a document describing the proposed APIs for transactions, following Swagger guidelines.  
+Since you are already managing the web application for Phase 1, we would like to hear your thoughts on how you think the APIs should be modeled on the back end. We need you to provide us with a document describing the proposed APIs for transactions, following Swagger guidelines.
+
+## Mockup design
+![Preview of user/accounts](./designs/wireframes/transactions.png)  
 
 ## Proposals  
 
