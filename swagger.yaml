@@ -269,30 +269,30 @@ paths:
               startDate:
                 type: string
                 format: date
-                description: Filter transactions starting from this date (`YYYY-MM-DD`).
+                description: Filter transactions starting from this date (`YYYY-MM-DD`). If empty default value = date of the current day
                 example: "2024-01-01"
               endDate:
                 type: string
                 format: date
-                description: Filter transactions up to this date (`YYYY-MM-DD`).
+                description: Filter transactions up to this date (`YYYY-MM-DD`). If empty default value = date of the current day minus 31 days
                 example: "2024-01-31"
               description:
                 type: string
-                description: Search transactions containing this keyword in their description.
+                description: Search transactions containing this keyword in their description. If empty search for all
                 example: "Bakery"
               minAmount:
                 type: number
                 format: float
-                description: Minimum transaction amount.
+                description: Minimum transaction amount. If empty search for all
                 example: 10.5
               maxAmount:
                 type: number
                 format: float
-                description: Maximum transaction amount.
+                description: Maximum transaction amount. If empty search for all
                 example: 500.75
               transactionType:
                 type: string
-                description: Filter by transaction type ("Electronic", "Cash", ... see enum).
+                description: Filter by transaction type ("Electronic", "Cash", ... see enum). If empty search for all
                 enum:
                 - "Electronic"
                 - "Cash"
@@ -301,7 +301,7 @@ paths:
                 example: "Electronic"
               category:
                 type: string
-                description: filter by category ("Food", "Travel", ... see enum).
+                description: filter by category ("Food", "Travel", ... see enum). If empty search for all
                 enum:
                 - "Food"
                 - "Travel"
@@ -314,7 +314,7 @@ paths:
                 example: "Food"
               notes:
                 type: string
-                description: Whether to filter transactions that include user notes.
+                description: Whether to filter transactions that include user notes. If empty search for all
                 enum: ["true", "false", "all"]
                 default: "all"
                 example: "all"
@@ -402,16 +402,16 @@ paths:
                     - "accountId is required and must be a valid string."
                     - "limit must be a positive integer greater than 0. or empty (means 30 per default)"
                     - "page must be a positive integer starting from 1. or empty (means 1 per default)"
-                    - "startDate must follow the format YYYY-MM-DD. or empty (means the most newest per default)"
-                    - "endDate must follow the format YYYY-MM-DD. or empty (means the most oldest per default)"
+                    - "startDate must follow the format YYYY-MM-DD. or empty (means date from the current day per default)"
+                    - "endDate must follow the format YYYY-MM-DD. or empty (means date from the current day minus 31 days per default)"
                     - "startDate cannot be after endDate."
                     - "startDate cannot be in futur."
                     - "minAmount must be a positive number. or empty"
                     - "maxAmount must be a positive number. or empty"
                     - "minAmount cannot be greater than maxAmount."
-                    - "transactionType must be one of the predefined values. or empty"
-                    - "category must be one of the predefined values. or empty"
-                    - "notes must be 'true', 'false', or 'all'."
+                    - "transactionType must be one of the predefined values. or empty for all"
+                    - "category must be one of the predefined values. or empty for all"
+                    - "notes must be 'true', 'false', or 'all'. or empty for all"
         '401':
             description: Unauthorized - Missing or invalid authentication token.
             examples:
