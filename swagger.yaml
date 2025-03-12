@@ -118,27 +118,43 @@ paths:
         - Bearer: []
       tags:
         - Account Module (not implemented)
-      summary: User Accounts API
+      summary: Retrieve User Accounts or Single Account API
       description: |
-          API for fetching a user accounts
+        API to retrieve user accounts.
 
-          Filter all accounts where <code>`the user id`</code> allowed by jwt is present in the <code>`usersId`</code> of accounts. And fetch accounts
+        If the `id` of the account is provided in the request body, the API will fetch the specific account associated with the authenticated user (validated via the `userId` in the JWT). 
+        If the `id` is not provided, the API will return all accounts that belong to the authenticated user.
+
+        - The user making the request must be authenticated, and the `userId` extracted from the JWT token must match one of the `usersId` associated with the account(s). 
+        - The `userId` is validated via the JWT, and the request will only be successful if the authenticated user has permission to access the requested account(s).
+
+        If the account ID does not exist or does not belong to the authenticated user, a corresponding error message will be returned.
       parameters:
         - in: header
           name: Authorization
           description: Attach Bearer JWT token
           required: true
+        - in: body
+          name: body
+          description: Account ID to fetch a specific user account (optional). If not provided, all accounts for the authenticated user will be retrieved.
+          required: false
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The ID of the account to retrieve. If not provided, all accounts will be fetched.
       produces:
         - application/json
       responses:
         '200':
-          description: User accounts retrieved successully
+          description: User account(s) retrieved successfully
           schema:
             $ref: '#/definitions/UserAccountsResponse'
           examples:
             application/json:
               status: 200
-              message: "Success fetching user accounts"
+              message: "Success fetching user account(s)"
               body:
                 accounts:
                   - id: "objectId0001"
@@ -157,58 +173,6 @@ paths:
                     amount: 184.30
                     description: "Current Balance"
         '400':
-          description: Invalid Fields
-        '404':
-          description: Accounts not found
-        '500':
-          description: Internal Server Error
-  /user/account:
-    post:
-      security:
-        - Bearer: []
-      tags:
-        - Account Module (not implemented)
-      summary: Retrieve User Account API
-      description: |
-          API to retrieve the user account associated with the authenticated user.
-
-          - This API allows the user to fetch their account by providing the `id` of the account in the request body. The user making the request must be authenticated, and the `userId` extracted from the JWT token must match one of the `usersId` associated with the account. 
-          - The `userId` is validated via the JWT, and the request will only be successful if the authenticated user has permission to access the requested account.
-          - If the account ID does not exist or does not belong to the authenticated user, a corresponding error message will be returned.
-      parameters:
-        - in: header
-          name: Authorization
-          description: Attach Bearer JWT token
-          required: true
-        - in: body
-          name: body
-          description: Account ID to fetch the user account based on the authenticated user
-          required: true
-          schema:
-            type: object
-            properties:
-              id:
-                type: string
-                description: The ID of the account to retrieve
-      produces:
-        - application/json
-      responses:
-        '200':
-          description: User account retrieved successully
-          schema:
-            $ref: '#/definitions/UserAccountResponse'
-          examples:
-            application/json:
-              status: 200
-              message: "Success fetching user account"
-              body:
-                account:
-                    id: "objectId0001"
-                    accountNumber: "x8349"
-                    title: "Argent Bank Checking"
-                    amount: 2082.79
-                    description: "Available Balance"
-        '400':
           description: Invalid request parameters.
           examples:
             application/json:
@@ -216,36 +180,37 @@ paths:
               message: "Invalid fields detected in request."
               details:
                 errors:
-                  - "id is required and must be a valid account ID."
+                  - "id must be a valid account ID if provided."
                   - "userId must match the authenticated user's ID."
         '401':
-            description: Unauthorized - Missing or invalid authentication token.
-            examples:
-              application/json:
-                status: 401
-                message: "Authentication required. Please provide a valid Bearer token."
+          description: Unauthorized - Missing or invalid authentication token.
+          examples:
+            application/json:
+              status: 401
+              message: "Authentication required. Please provide a valid Bearer token."
         '403':
-            description: Forbidden - User does not have access to this account.
-            examples:
-              application/json:
-                status: 403
-                message: "You do not have permission to access this account."
+          description: Forbidden - User does not have access to this account.
+          examples:
+            application/json:
+              status: 403
+              message: "You do not have permission to access this account."
         '404':
-            description: Account not found.
-            examples:
-              application/json:
-                status: 404
-                message: "Account not found with the given ID."
-                details:
-                  reasons:
-                    - "Account ID does not exist."
-                    - "Account does not belong to the authenticated user."
+          description: Account(s) not found.
+          examples:
+            application/json:
+              status: 404
+              message: "Account not found with the given ID or no accounts found for the authenticated user."
+              details:
+                reasons:
+                  - "Account ID does not exist."
+                  - "Account does not belong to the authenticated user."
+                  - "No accounts found for the authenticated user."
         '500':
-            description: Internal Server Error - Something went wrong on the server.
-            examples:
-              application/json:
-                status: 500
-                message: "An unexpected error occurred. Please try again later."
+          description: Internal Server Error - Something went wrong on the server.
+          examples:
+            application/json:
+              status: 500
+              message: "An unexpected error occurred. Please try again later."
   /user/account/transactions:
     post:
       security:
@@ -689,15 +654,6 @@ definitions:
         type: array
         items:
           type: string
-  # UserAccounts:
-  #     type: object
-  #     properties:
-  #       userId:
-  #         type: string
-  #       accounts:
-  #         type: array
-  #         items:
-  #           $ref: "#/definitions/Account"
   Transaction:
     type: object
     properties:
@@ -723,17 +679,6 @@ definitions:
         type: string
       userIdOfNote:
         type: string
-  # UserAccountTransactions:
-  #     type: object
-  #     properties:
-  #       userId:
-  #         type: string
-  #       accountId:
-  #         type: string
-  #       transactions:
-  #         type: array
-  #         items:
-  #           $ref: "#/definitions/Transaction"
   UserAccountsResponse:
     type: object
     properties:
@@ -748,18 +693,6 @@ definitions:
             type: array
             items:
               $ref: "#/definitions/Account"
-  UserAccountResponse:
-    type: object
-    properties:
-      status:
-        type: integer
-      message:
-        type: string
-      body:
-        type: object
-        properties:
-          account:
-            $ref: "#/definitions/Account"
   TransactionResponse:
     type: object
     properties:
@@ -786,3 +719,110 @@ definitions:
             type: array
             items:
               $ref: "#/definitions/Transaction"
+
+
+
+
+
+
+
+# Fonction de cette route intégré dans /user/accounts
+  # /user/account:
+  #   post:
+  #     security:
+  #       - Bearer: []
+  #     tags:
+  #       - Account Module (not implemented)
+  #     summary: Retrieve User Account API
+  #     description: |
+  #         API to retrieve the user account associated with the authenticated user.
+
+  #         - This API allows the user to fetch their account by providing the `id` of the account in the request body. The user making the request must be authenticated, and the `userId` extracted from the JWT token must match one of the `usersId` associated with the account. 
+  #         - The `userId` is validated via the JWT, and the request will only be successful if the authenticated user has permission to access the requested account.
+  #         - If the account ID does not exist or does not belong to the authenticated user, a corresponding error message will be returned.
+  #     parameters:
+  #       - in: header
+  #         name: Authorization
+  #         description: Attach Bearer JWT token
+  #         required: true
+  #       - in: body
+  #         name: body
+  #         description: Account ID to fetch the user account based on the authenticated user
+  #         required: true
+  #         schema:
+  #           type: object
+  #           properties:
+  #             id:
+  #               type: string
+  #               description: The ID of the account to retrieve
+  #     produces:
+  #       - application/json
+  #     responses:
+  #       '200':
+  #         description: User account retrieved successully
+  #         schema:
+  #           $ref: '#/definitions/UserAccountResponse'
+  #         examples:
+  #           application/json:
+  #             status: 200
+  #             message: "Success fetching user account"
+  #             body:
+  #               account:
+  #                   id: "objectId0001"
+  #                   accountNumber: "x8349"
+  #                   title: "Argent Bank Checking"
+  #                   amount: 2082.79
+  #                   description: "Available Balance"
+  #       '400':
+  #         description: Invalid request parameters.
+  #         examples:
+  #           application/json:
+  #             status: 400
+  #             message: "Invalid fields detected in request."
+  #             details:
+  #               errors:
+  #                 - "id is required and must be a valid account ID."
+  #                 - "userId must match the authenticated user's ID."
+  #       '401':
+  #           description: Unauthorized - Missing or invalid authentication token.
+  #           examples:
+  #             application/json:
+  #               status: 401
+  #               message: "Authentication required. Please provide a valid Bearer token."
+  #       '403':
+  #           description: Forbidden - User does not have access to this account.
+  #           examples:
+  #             application/json:
+  #               status: 403
+  #               message: "You do not have permission to access this account."
+  #       '404':
+  #           description: Account not found.
+  #           examples:
+  #             application/json:
+  #               status: 404
+  #               message: "Account not found with the given ID."
+  #               details:
+  #                 reasons:
+  #                   - "Account ID does not exist."
+  #                   - "Account does not belong to the authenticated user."
+  #       '500':
+  #           description: Internal Server Error - Something went wrong on the server.
+  #           examples:
+  #             application/json:
+  #               status: 500
+  #               message: "An unexpected error occurred. Please try again later."
+
+
+# definitions:
+    # UserAccountResponse:
+    # type: object
+    # properties:
+    #   status:
+    #     type: integer
+    #   message:
+    #     type: string
+    #   body:
+    #     type: object
+    #     properties:
+    #       account:
+    #         $ref: "#/definitions/Account"
