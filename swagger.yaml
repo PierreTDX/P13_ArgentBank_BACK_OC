@@ -256,18 +256,16 @@ paths:
                 required: true
               limit:
                 type: integer
-                description: Number of transactions to return per request.
+                description: Number of transactions to return per request. If empty default value = 30
                 default: 30
                 minimum: 1
                 example: 30
-                required: true
               page:
                 type: integer
-                description: Page number (starts from 1).
+                description: Page number (starts from 1). If empty default value = 1
                 default: 1
                 minimum: 1
                 example: 2
-                required: true
               startDate:
                 type: string
                 format: date
@@ -294,11 +292,25 @@ paths:
                 example: 500.75
               transactionType:
                 type: string
-                description: Filter by transaction type (e.g., "Electronic", "Cash").
+                description: Filter by transaction type ("Electronic", "Cash", ... see enum).
+                enum:
+                - "Electronic"
+                - "Cash"
+                - "Transfer"
+                - "Deposit"
                 example: "Electronic"
               category:
                 type: string
-                description: Filter transactions by category (e.g., "Food", "Rent").
+                description: filter by category ("Food", "Travel", ... see enum).
+                enum:
+                - "Food"
+                - "Travel"
+                - "Entertainment"
+                - "Shopping"
+                - "Utilities"
+                - "Health"
+                - "Education"
+                - "Other"
                 example: "Food"
               notes:
                 type: string
@@ -388,16 +400,17 @@ paths:
                 details:
                   errors:
                     - "accountId is required and must be a valid string."
-                    - "limit is required and must be a positive integer greater than 0."
-                    - "page is required and must be a positive integer starting from 1."
-                    - "startDate must follow the format YYYY-MM-DD. or empty"
-                    - "endDate must follow the format YYYY-MM-DD. or empty"
+                    - "limit must be a positive integer greater than 0. or empty (means 30 per default)"
+                    - "page must be a positive integer starting from 1. or empty (means 1 per default)"
+                    - "startDate must follow the format YYYY-MM-DD. or empty (means the most newest per default)"
+                    - "endDate must follow the format YYYY-MM-DD. or empty (means the most oldest per default)"
                     - "startDate cannot be after endDate."
+                    - "startDate cannot be in futur."
                     - "minAmount must be a positive number. or empty"
                     - "maxAmount must be a positive number. or empty"
                     - "minAmount cannot be greater than maxAmount."
-                    - "transactionType must be a valid string. or empty"
-                    - "category must be a valid string. or empty"
+                    - "transactionType must be one of the predefined values. or empty"
+                    - "category must be one of the predefined values. or empty"
                     - "notes must be 'true', 'false', or 'all'."
         '401':
             description: Unauthorized - Missing or invalid authentication token.
@@ -439,7 +452,9 @@ paths:
                 message: "Validation error."
                 errors:
                   - field: "transactionType"
-                    message: "Invalid value. Allowed values: Electronic, Cash. or empty" 
+                    message: "Invalid value. Allowed values: Electronic, Cash (see enum). or empty" 
+                  - field: "category"
+                    message: "Invalid value. Allowed values: Food, Travel, (see enum). or empty" 
                   - field: "limit"
                     message: "Must be a positive integer greater than 0."
                   - field: "page"
@@ -476,6 +491,7 @@ paths:
         - This API allows the user to update specific details of a transaction. The transaction is identified by its `id` in the request body, while the `accountId` is validated using the JWT token. 
         - The user making the update is identified through the `userIdOfNote` field, which is extracted from the JWT token. Only the user associated with the transaction can update the transaction details.
         - The fields `category` and `notes` can be updated independently. If a field is left empty, no update will be made for that field (i.e., no change will be reflected in the database).
+        - `category` must be one of the predefined allowed values. This field is optional but must be validated if provided.
         - This API is intended to allow partial updates to transactions, so not all fields are required in the request body.
 
         Please ensure that the transaction ID exists and belongs to the authenticated user to successfully perform the update.
@@ -497,7 +513,19 @@ paths:
                 required: true
               category:
                 type: string
-                description: The new category for the transaction, if empty = no update (no change in Db)
+                description: |
+                  The new category for the transaction. 
+                  If empty = no update (no change in Db). 
+                  Examples allowed values: 'Food', 'Travel', 'Entertainment', 'Shopping', 'Utilities', 'Health', 'Education', 'Other'. 
+                enum:
+                - "Food"
+                - "Travel"
+                - "Entertainment"
+                - "Shopping"
+                - "Utilities"
+                - "Health"
+                - "Education"
+                - "Other"
               notes:
                 type: string
                 description: The new notes for the transaction, can be empty
@@ -532,7 +560,7 @@ paths:
               details:
                 errors:
                   - "id is required and must be a valid transaction ID."
-                  - "category must be a valid string."
+                  - "category must be a valid category."
                   - "notes must be a valid string."
         '401':
             description: Unauthorized - Missing or invalid authentication token.
@@ -566,7 +594,7 @@ paths:
                   - field: "id"
                     message: "Invalid transaction ID format."
                   - field: "category"
-                    message: "Category must be a valid string."
+                    message: "Category must be one of the predefined values."
                   - field: "notes"
                     message: "Notes must be a valid string."
         '500':
@@ -670,9 +698,23 @@ definitions:
         type: number
         format: float
       transactionType:
-        type: string
+         type: string
+         enum:
+           - "Electronic"
+           - "Cash"
+           - "Transfer"
+           - "Deposit"
       category:
-        type: string
+         type: string
+         enum:
+           - "Food"
+           - "Travel"
+           - "Entertainment"
+           - "Shopping"
+           - "Utilities"
+           - "Health"
+           - "Education"
+           - "Other"
       notes:
         type: string
       accountId:
