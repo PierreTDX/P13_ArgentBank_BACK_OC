@@ -89,11 +89,13 @@ Since you are already managing the web application for Phase 1, we would like to
 
 1. Routes  
 
-![Preview of user/accounts](./public/P13_ArgentBank_Swagger_UI_POST_user_accounts.png)  
+![Preview of post:user/accounts](./public/P13_ArgentBank_Swagger_UI_POST_user_accounts.png)  
 
-![Preview of user/account/transactions](./public/P13_ArgentBank_Swagger_UI_POST_user_account_transactions.png)  
+![Preview of post:user/account/transactions](./public/P13_ArgentBank_Swagger_UI_POST_user_account_transactions.png)  
 
-![Preview of user/account/transaction](./public/P13_ArgentBank_Swagger_UI_PATCH_user_account_transaction.png)  
+![Preview of post:user/account/transaction](./public/P13_ArgentBank_Swagger_UI_POST_user_account_transaction.png)  
+
+![Preview of patch:user/account/transaction](./public/P13_ArgentBank_Swagger_UI_PATCH_user_account_transaction.png)  
 
 2. Models  
 

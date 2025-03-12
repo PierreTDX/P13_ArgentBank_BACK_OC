@@ -479,6 +479,102 @@ paths:
                 message: "An unexpected error occurred. Please try again later."  
 
   /user/account/transaction:
+    post:
+      security:
+        - Bearer: []
+      tags:
+        - Account Module (not implemented)
+      summary: Fetch Transaction API
+      description: |
+        API to fetch a transaction.
+
+        - This API allows the user to fecth a transaction. The transaction is identified by its `id` in the request body, while the `accountId` is validated using the JWT token. 
+
+        Please ensure that the transaction ID exists and belongs to the authenticated user to successfully fecth the transaction.
+      parameters:
+        - in: header
+          name: Authorization
+          description: Attach Bearer JWT token
+          required: true
+        - in: body
+          name: body
+          description: Transaction ID to fetch transaction
+          required: true
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The ID of the transaction to be fetched
+                required: true
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success fetching transaction
+          schema:
+            $ref: '#/definitions/TransactionResponse'
+          examples:
+            application/json:
+              status: 200
+              message: "Success fetching transaction"
+              body:
+                transaction:
+                  id: "objectId0020"
+                  date: "2020-06-20T14:30:00Z"
+                  description: "Golden Sun Bakery"
+                  amount: 5
+                  balance: 2082.79
+                  transactionType: "Electronic"
+                  category: "Food"
+                  notes: "text note"
+                  userIdOfNote: "67c7352eb891884d709ab384"
+        '400':
+          description: Invalid request parameters.
+          examples:
+            application/json:
+              status: 400
+              message: "Invalid fields detected in request."
+              details:
+                errors:
+                  - "id is required and must be a valid transaction ID."
+        '401':
+            description: Unauthorized - Missing or invalid authentication token.
+            examples:
+              application/json:
+                status: 401
+                message: "Authentication required. Please provide a valid Bearer token."
+        '403':
+            description: Forbidden - User does not have access to this transaction.
+            examples:
+              application/json:
+                status: 403
+                message: "You do not have permission to fetch this transaction."
+        '404':
+            description: Transaction not found.
+            examples:
+              application/json:
+                status: 404
+                message: "Transaction not found with the given ID."
+                details:
+                  reasons:
+                    - "Transaction ID does not exist."
+                    - "The transaction does not belong to the authenticated user."
+        '422':
+            description: Unprocessable Entity - Validation errors in request parameters.
+            examples:
+              application/json:
+                status: 422
+                message: "Validation error."
+                errors:
+                  - field: "id"
+                    message: "Invalid transaction ID format."
+        '500':
+            description: Internal Server Error - Something went wrong on the server.
+            examples:
+              application/json:
+                status: 500
+                message: "An unexpected error occurred. Please try again later."
     patch:
       security:
         - Bearer: []
