@@ -122,22 +122,12 @@ paths:
       description: |
           API for fetching a user accounts
 
-          Filter all accounts where <code>`the user id`</code> is present in the <code>`userId`</code> table.
+          Filter all accounts where <code>`the user id`</code> allowed by jwt is present in the <code>`usersId`</code> of accounts. And fetch accounts
       parameters:
         - in: header
           name: Authorization
           description: Attach Bearer JWT token
           required: true
-        - in: body
-          name: body
-          description: Filter accounts based on userId
-          required: true
-          schema:
-            type: object
-            properties:
-              userId:
-                type: string
-                description: The userId to filter accounts by
       produces:
         - application/json
       responses:
@@ -150,8 +140,7 @@ paths:
               status: 200
               message: "Success fetching user accounts"
               body:
-                userId: "67c7352eb891884d709ab384"
-                account:
+                accounts:
                   - id: "objectId0001"
                     accountNumber: "x8349"
                     title: "Argent Bank Checking"
@@ -179,11 +168,13 @@ paths:
         - Bearer: []
       tags:
         - Account Module (not implemented)
-      summary: User Account API
+      summary: Retrieve User Account API
       description: |
-          API for fetching a user account
+          API to retrieve the user account associated with the authenticated user.
 
-          Check where <code>`the user id`</code> is present in the <code>`userId`</code> table.
+          - This API allows the user to fetch their account by providing the `id` of the account in the request body. The user making the request must be authenticated, and the `userId` extracted from the JWT token must match one of the `usersId` associated with the account. 
+          - The `userId` is validated via the JWT, and the request will only be successful if the authenticated user has permission to access the requested account.
+          - If the account ID does not exist or does not belong to the authenticated user, a corresponding error message will be returned.
       parameters:
         - in: header
           name: Authorization
@@ -191,17 +182,14 @@ paths:
           required: true
         - in: body
           name: body
-          description: Account based on userId
+          description: Account ID to fetch the user account based on the authenticated user
           required: true
           schema:
             type: object
             properties:
-              userId:
+              id:
                 type: string
-                description: The user ID to control account ownership
-              accountId:
-                type: string
-                description: The account ID to fetch account
+                description: The ID of the account to retrieve
       produces:
         - application/json
       responses:
@@ -214,7 +202,6 @@ paths:
               status: 200
               message: "Success fetching user account"
               body:
-                userId: "67c7352eb891884d709ab384"
                 account:
                     id: "objectId0001"
                     accountNumber: "x8349"
@@ -222,23 +209,70 @@ paths:
                     amount: 2082.79
                     description: "Available Balance"
         '400':
-          description: Invalid Fields
+          description: Invalid request parameters.
+          examples:
+            application/json:
+              status: 400
+              message: "Invalid fields detected in request."
+              details:
+                errors:
+                  - "id is required and must be a valid account ID."
+                  - "userId must match the authenticated user's ID."
+        '401':
+            description: Unauthorized - Missing or invalid authentication token.
+            examples:
+              application/json:
+                status: 401
+                message: "Authentication required. Please provide a valid Bearer token."
+        '403':
+            description: Forbidden - User does not have access to this account.
+            examples:
+              application/json:
+                status: 403
+                message: "You do not have permission to access this account."
         '404':
-          description: Accounts not found
+            description: Account not found.
+            examples:
+              application/json:
+                status: 404
+                message: "Account not found with the given ID."
+                details:
+                  reasons:
+                    - "Account ID does not exist."
+                    - "Account does not belong to the authenticated user."
         '500':
-          description: Internal Server Error
-  /user/account/transactions/31daysSinceMostRecentTransaction:
+            description: Internal Server Error - Something went wrong on the server.
+            examples:
+              application/json:
+                status: 500
+                message: "An unexpected error occurred. Please try again later."
+  /user/account/transactions:
     post:
       security:
         - Bearer: []
       tags:
         - Account Module (not implemented)
-      summary: Last 31 Days Transactions from most recent Transaction API
+      summary: Fetch and filter account transactions with pagination and sorting options API
       description: |
-        API for fetching account transactions for the 31 days following the most recent transaction.
+        API for fetching account transactions, with a default return of **30 most recent transactions**, sorted by various elements.
 
-        <b>The server should retrieve the most recent transaction</b> and then filter out transactions that are within <b>31 days of that last transaction</b>. 
-        <i>This allows the client to retrieve a relevant set of data based on the most recent activity.</i>
+        - **The API retrieves the most recent transaction** of an account (with `accountId` allowed by JWT).
+        - Transactions are **sorted from newest to oldest** by default, but clients can specify different sorting criteria if needed.
+        - Clients can **paginate results** using:
+          - `limit`: Number of transactions per page (default: **30**).
+          - `page`: Page number (starts from **1**, default: **1**).
+        - Clients can **filter transactions** using:
+          - `startDate` and `endDate` to define a date range.
+          - `description` to search for a specific keyword in transaction descriptions.
+          - `minAmount` and `maxAmount` to filter by transaction amounts.
+          - `transactionType` and `category` to refine results by type or category.
+          - `notes` to filter transactions:
+            - `true`: Only transactions with user notes.
+            - `false`: Only transactions without user notes.
+            - `all` (default): No filtering on notes.
+        - Default behavior:
+          - If no parameters are provided, the API returns **30 most recent transactions** (`limit=30`, `page=1`).
+          - Sorting options allow flexibility in viewing transactions based on different attributes (e.g., amount, category).
       parameters:
         - in: header
           name: Authorization
@@ -251,12 +285,62 @@ paths:
           schema:
             type: object
             properties:
-              userId:
-                type: string
-                description: The user ID to control account ownership
               accountId:
                 type: string
-                description: The account ID to fetch transactions for
+                description: The account ID to fetch transactions for.
+                required: true
+              limit:
+                type: integer
+                description: Number of transactions to return per request.
+                default: 30
+                minimum: 1
+                example: 30
+                required: true
+              page:
+                type: integer
+                description: Page number (starts from 1).
+                default: 1
+                minimum: 1
+                example: 2
+                required: true
+              startDate:
+                type: string
+                format: date
+                description: Filter transactions starting from this date (`YYYY-MM-DD`).
+                example: "2024-01-01"
+              endDate:
+                type: string
+                format: date
+                description: Filter transactions up to this date (`YYYY-MM-DD`).
+                example: "2024-01-31"
+              description:
+                type: string
+                description: Search transactions containing this keyword in their description.
+                example: "Bakery"
+              minAmount:
+                type: number
+                format: float
+                description: Minimum transaction amount.
+                example: 10.5
+              maxAmount:
+                type: number
+                format: float
+                description: Maximum transaction amount.
+                example: 500.75
+              transactionType:
+                type: string
+                description: Filter by transaction type (e.g., "Electronic", "Cash").
+                example: "Electronic"
+              category:
+                type: string
+                description: Filter transactions by category (e.g., "Food", "Rent").
+                example: "Food"
+              notes:
+                type: string
+                description: Whether to filter transactions that include user notes.
+                enum: ["true", "false", "all"]
+                default: "all"
+                example: "all"
       produces:
         - application/json
       responses:
@@ -267,10 +351,8 @@ paths:
           examples:
             application/json:
               status: 200
-              message: "Success fetching account transactions for the 31 days following the most recent transaction"
+              message: "Success fetching account transactions"
               body:
-                userId: "67c7352eb891884d709ab384"
-                accountId: "objectId0001"
                 transactions:
                 - id: "objectId0020"
                   date: "2020-06-20T14:30:00Z"
@@ -331,23 +413,107 @@ paths:
                   category: "Food"
                   notes: ""
                   userIdOfNote: "67c7352eb891884d709ab384"
+
         '400':
-          description: Invalid Fields
+            description: Invalid request parameters.
+            examples:
+              application/json:
+                status: 400
+                message: "Invalid fields detected in request."
+                details:
+                  errors:
+                    - "accountId is required and must be a valid string."
+                    - "limit is required and must be a positive integer greater than 0."
+                    - "page is required and must be a positive integer starting from 1."
+                    - "startDate must follow the format YYYY-MM-DD. or empty"
+                    - "endDate must follow the format YYYY-MM-DD. or empty"
+                    - "startDate cannot be after endDate."
+                    - "minAmount must be a positive number. or empty"
+                    - "maxAmount must be a positive number. or empty"
+                    - "minAmount cannot be greater than maxAmount."
+                    - "transactionType must be a valid string. or empty"
+                    - "category must be a valid string. or empty"
+                    - "notes must be 'true', 'false', or 'all'."
+        '401':
+            description: Unauthorized - Missing or invalid authentication token.
+            examples:
+              application/json:
+                status: 401
+                message: "Authentication required. Please provide a valid Bearer token."
+
+        '403':
+            description: Forbidden - User does not have access to this account.
+            examples:
+              application/json:
+                status: 403
+                message: "You do not have permission to access this account."
+
         '404':
-          description: Account not found
+            description: No matching transactions found.
+            examples:
+              application/json:
+                status: 404
+                message: "No transactions found matching the given criteria."
+                details:
+                  reasons:
+                    - "Account ID not found."
+                    - "No transactions available for the selected date range."
+                    - "Start date is in the future."
+                    - "End date exceeds the available transaction history."
+                    - "No transactions match the description filter."
+                    - "No transactions found within the specified amount range."
+                    - "No transactions found for the selected transaction type."
+                    - "No transactions found for the selected category."
+                    - "No transactions found with user notes matching the filter."
+
+        '422':
+            description: Unprocessable Entity - Validation errors in request parameters.
+            examples:
+              application/json:
+                status: 422
+                message: "Validation error."
+                errors:
+                  - field: "transactionType"
+                    message: "Invalid value. Allowed values: Electronic, Cash. or empty" 
+                  - field: "limit"
+                    message: "Must be a positive integer greater than 0."
+                  - field: "page"
+                    message: "Must be a positive integer starting from 1."
+                  - field: "startDate"
+                    message: "Invalid date format. Must be YYYY-MM-DD. or empty"
+                  - field: "endDate"
+                    message: "Invalid date format. Must be YYYY-MM-DD. or empty"
+                  - field: "startDate"
+                    message: "Cannot be after endDate."
+                  - field: "minAmount"
+                    message: "Must be a positive number. or empty"
+                  - field: "maxAmount"
+                    message: "Must be a positive number. or empty"
+                  - field: "minAmount"
+                    message: "Cannot be greater than maxAmount."
         '500':
-          description: Internal Server Error
-  /transaction:
+            description: Internal Server Error - Something went wrong on the server.
+            examples:
+              application/json:
+                status: 500
+                message: "An unexpected error occurred. Please try again later."  
+
+  /user/account/transaction:
     patch:
       security:
         - Bearer: []
       tags:
         - Account Module (not implemented)
-      summary: Notes Account Transaction API
+      summary: Update Notes for a Transaction API
       description: |
-        API for updating notes account transaction.
+        API to update the notes and category of a transaction.
 
-        Find transaction by id when update category, notes and userIdOfNote (userId that updated transaction)
+        - This API allows the user to update specific details of a transaction. The transaction is identified by its `id` in the request body, while the `accountId` is validated using the JWT token. 
+        - The user making the update is identified through the `userIdOfNote` field, which is extracted from the JWT token. Only the user associated with the transaction can update the transaction details.
+        - The fields `category` and `notes` can be updated independently. If a field is left empty, no update will be made for that field (i.e., no change will be reflected in the database).
+        - This API is intended to allow partial updates to transactions, so not all fields are required in the request body.
+
+        Please ensure that the transaction ID exists and belongs to the authenticated user to successfully perform the update.
       parameters:
         - in: header
           name: Authorization
@@ -360,23 +526,21 @@ paths:
           schema:
             type: object
             properties:
-              transactiontId:
+              id:
                 type: string
-                description: The transaction ID to update transaction
+                description: The ID of the transaction to be updated
+                required: true
               category:
                 type: string
-                description: new text to update transaction
+                description: The new category for the transaction, if empty = no update (no change in Db)
               notes:
                 type: string
-                description: new text to update transaction
-              userIdOfNote:
-                type: string
-                description: userId that updated transaction (id of connected user)
+                description: The new notes for the transaction, can be empty
       produces:
         - application/json
       responses:
         '200':
-          description: Notes Transaction updated successfully
+          description: Success updating transaction notes
           schema:
             $ref: '#/definitions/TransactionResponse'
           examples:
@@ -395,11 +559,57 @@ paths:
                   notes: "new text"
                   userIdOfNote: "67c7352eb891884d709ab384"
         '400':
-          description: Invalid Fields
+          description: Invalid request parameters.
+          examples:
+            application/json:
+              status: 400
+              message: "Invalid fields detected in request."
+              details:
+                errors:
+                  - "id is required and must be a valid transaction ID."
+                  - "category must be a valid string."
+                  - "notes must be a valid string."
+        '401':
+            description: Unauthorized - Missing or invalid authentication token.
+            examples:
+              application/json:
+                status: 401
+                message: "Authentication required. Please provide a valid Bearer token."
+        '403':
+            description: Forbidden - User does not have access to this transaction.
+            examples:
+              application/json:
+                status: 403
+                message: "You do not have permission to update this transaction."
         '404':
-          description: Transaction not found
+            description: Transaction not found.
+            examples:
+              application/json:
+                status: 404
+                message: "Transaction not found with the given ID."
+                details:
+                  reasons:
+                    - "Transaction ID does not exist."
+                    - "The transaction does not belong to the authenticated user."
+        '422':
+            description: Unprocessable Entity - Validation errors in request parameters.
+            examples:
+              application/json:
+                status: 422
+                message: "Validation error."
+                errors:
+                  - field: "id"
+                    message: "Invalid transaction ID format."
+                  - field: "category"
+                    message: "Category must be a valid string."
+                  - field: "notes"
+                    message: "Notes must be a valid string."
         '500':
-          description: Internal Server Error
+            description: Internal Server Error - Something went wrong on the server.
+            examples:
+              application/json:
+                status: 500
+                message: "An unexpected error occurred. Please try again later."
 
 
 securityDefinitions:
@@ -534,8 +744,6 @@ definitions:
       body:
         type: object
         properties:
-          userId:
-            type: string
           accounts:
             type: array
             items:
@@ -550,8 +758,6 @@ definitions:
       body:
         type: object
         properties:
-          userId:
-            type: string
           account:
             $ref: "#/definitions/Account"
   TransactionResponse:
@@ -562,7 +768,10 @@ definitions:
       message:
         type: string
       body:
-         $ref: "#/definitions/Transaction"
+        type: object
+        properties:
+          transaction:
+            $ref: "#/definitions/Transaction"
   UserAccountTransactionsResponse:
     type: object
     properties:
@@ -573,10 +782,6 @@ definitions:
       body:
         type: object
         properties:
-          userId:
-            type: string
-          accountId:
-            type: string
           transactions:
             type: array
             items:
