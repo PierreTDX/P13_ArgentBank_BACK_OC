@@ -1,6 +1,8 @@
 # Project #13 - Argent Bank API
 
-This codebase contains the code needed to run the backend for Argent Bank.
+This codebase contains the code needed to run the backend for Argent Bank.  
+\+ Proposed Endpoints for Phase 2 of the API [HERE](#phase-2--transactions)
+
 
 ## Getting Started
 
@@ -74,3 +76,27 @@ Static HTML and CSS has been created for most of the site and is located in: `/d
 For some of the dynamic features, like toggling user editing, there is a mock-up for it in `/designs/wireframes/edit-user-name.png`.
 
 And for the API model that you will be proposing for transactitons, the wireframe can be found in `/designs/wireframes/transactions.png`.
+
+# Phase 2 : Transactions
+
+We are still in the design phase.  
+Since you are already managing the web application for Phase 1, we would like to hear your thoughts on how you think the APIs should be modeled on the back end. We need you to provide us with a document describing the proposed APIs for transactions, following Swagger guidelines.  
+
+## Proposals  
+
+1. Routes  
+
+![Preview of user/accounts](./public/P13_ArgentBank_Swagger_UI_POST_user_accounts.png)  
+
+![Preview of user/account/transactions](./public/P13_ArgentBank_Swagger_UI_POST_user_account_transactions.png)  
+
+![Preview of user/account/transaction](./public/P13_ArgentBank_Swagger_UI_PATCH_user_account_transaction.png)  
+
+2. Models  
+
+![Preview of user/accounts](./public/P13_ArgentBank_Swagger_UI_models.png)  
+
+3. Link to the Swagger file  
+
+   [swagger.yaml](swagger.yaml)
+
